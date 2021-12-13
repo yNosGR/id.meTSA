@@ -2,38 +2,44 @@ import pulumi
 import pulumi_gcp as gcp
 
 import network as my_networks
+import dns
 
-private_ip_alloc = gcp.compute.GlobalAddress("privateIpAlloc",
-    address="10.3.0.128",
-    name="privatedb",
-    purpose="PRIVATE_SERVICE_CONNECT",
+private_ip_address = gcp.compute.GlobalAddress("privateipaddress",
+    purpose="VPC_PEERING",
     address_type="INTERNAL",
-    network=my_networks.asg_network.network)
-
-foobar = gcp.servicenetworking.Connection("foobar",
-    network=my_networks.asg_network.id,
-    service="servicenetworking.googleapis.com",
-    reserved_peering_ranges=[my_networks.asg_network.ip_cidr_range,"10.3.0.0/24"]
+    prefix_length=16,
+    network=my_networks.asg_network.network,
 )
 
-#instance = gcp.sql.DatabaseInstance("instance",
-#    region="us-east1",
-#    database_version="MYSQL_5_7",
-#    settings=gcp.sql.DatabaseInstanceSettingsArgs(
-#        tier="db-f1-micro",
-#        ip_configuration=gcp.sql.DatabaseInstanceSettingsIpConfigurationArgs(
-#          ipv4_enabled=False,
-#          private_network=my_networks.subnet_db.id,
-#        ),
-#    ),
-#)
+private_vpc_connection = gcp.servicenetworking.Connection("privatevpcconnection",
+    network=my_networks.asg_network.network,
+    service="servicenetworking.googleapis.com",
+    reserved_peering_ranges=[private_ip_address.name],
+)
 
-#database = gcp.sql.Database("database", instance=instance.name)
+#db_name_suffix = random.RandomId("dbNameSuffix", byte_length=4)
 
-#users = gcp.sql.User("dontuserthisuser",
-#    name="dontusethisuser",
-#    instance=instance.name,
-#    password="pleasedontusethishorriblepassword"
-#)
+instance = gcp.sql.DatabaseInstance("instance",
+    
+    region="us-east1",
+    database_version="MYSQL_5_7",
+    deletion_protection=False,
+    settings=gcp.sql.DatabaseInstanceSettingsArgs(
+        tier="db-f1-micro",
+        ip_configuration=gcp.sql.DatabaseInstanceSettingsIpConfigurationArgs(
+            ipv4_enabled=False,
+            private_network=my_networks.asg_network.network,
+        ),
+    ),
+    opts=pulumi.ResourceOptions( depends_on=[private_vpc_connection])
+)
 
-#pulumi.export('instance ', instance.first_ip_address)
+
+
+users = gcp.sql.User("dontuserthisuser",
+    name="dontusethisuser",
+    instance=instance.name,
+    password="pleasedontusethishorriblepassword"
+)
+
+pulumi.export('instance ', instance.first_ip_address)

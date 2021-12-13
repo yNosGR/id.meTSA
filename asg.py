@@ -4,6 +4,7 @@ import pulumi_gcp as gcp
 import dns
 import buckets as my_buckets
 import network as my_networks
+import db as my_db
 
 debian10 = gcp.compute.get_image(family="debian-10",
     project="debian-cloud")
@@ -76,7 +77,7 @@ default_instance_group_manager = gcp.compute.InstanceGroupManager("defaultinstan
     ),
     target_pools=[default_target_pool.id],
     base_instance_name="autoscaler-sample",
-    #opts=pulumi.ResourceOptions(provider=google_beta)
+    opts=pulumi.ResourceOptions(depends_on=[my_db.instance])
 )
 
 default_autoscaler = gcp.compute.Autoscaler("defaultautoscaler",
@@ -118,7 +119,6 @@ my_forwarding_rule = gcp.compute.GlobalForwardingRule("googlecomputeforwardingru
     target=default_target_http_proxy.id,
     port_range="80",
     load_balancing_scheme="EXTERNAL",
-#    allow_global_access=True,
 )   
  
-pulumi.export('forwarding_rule ip_address', my_forwarding_rule.ip_address)
+#pulumi.export('forwarding_rule ip_address', my_forwarding_rule.ip_address)
