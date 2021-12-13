@@ -1,5 +1,14 @@
 # ID.me - Technical Skills Assessment
-The Exercise:
+## To Do
+* monitoring and dashboards.
+
+## Complaints
+* Pulumi's GCP documentation doesnt match reality. 
+* There were too many instances where I had to shift the plan in order to create things differtly because one thing was supposed to output a list and it outputted a string, or a dict.
+* There were too many times where the doc said it needed one method, but it used another. I'm looking at you .network, .id, .name, and .ip_address
+
+
+## The Exercise:
 
 * Create an account using the Google Cloud Platform Free Tier
 
